@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Football Match Manager</title>
+<style>
+:root{--bg:#0a1120;--card:#131c31;--c2:#1c2944;--tx:#f4f7fc;--mut:#8f9bb8;--A:#2f7bff;--B:#ff3b4a;--C:#1fc66a;--gold:#ffc83d;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:96px}
+#app{max-width:720px;margin:auto;padding:12px}
+h2{margin:0 0 8px;font-size:15px;letter-spacing:1.5px;color:var(--mut)}
+.card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px}
+.lab{font-size:12px;letter-spacing:2px;color:var(--mut);font-weight:700}
+.mut{color:var(--mut);font-size:14px}
+.btn{font:inherit;font-weight:700;color:var(--tx);background:var(--c2);border:0;border-radius:12px;padding:12px 14px;min-height:48px;cursor:pointer}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--A)}.btn.grn{background:var(--C);color:#04170c}.btn.red{background:var(--B)}.btn.amb{background:var(--gold);color:#201700}
+.btn.big{width:100%;font-size:20px;min-height:60px}
+.btn.sm{min-height:36px;padding:6px 10px;font-size:14px}
+.btn:disabled{opacity:.35}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.row>*{flex:1}
+input,select{font:inherit;color:var(--tx);background:var(--c2);border:1px solid #2c3a5c;border-radius:10px;padding:10px;width:100%;min-height:46px}
+input[type=checkbox]{width:22px;min-height:22px;height:22px}
+label{display:block;margin:8px 0;font-size:13px;color:var(--mut)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.sr{font-size:40px;font-weight:800;font-variant-numeric:tabular-nums}
+.vs{display:flex;justify-content:space-between;font-weight:800;font-size:18px;margin:6px 0}
+.score{display:flex;justify-content:center;align-items:center;gap:16px;font-size:76px;font-weight:900;line-height:1}
+.score span{color:var(--mut);font-size:40px}
+.timer{text-align:center;font-size:clamp(72px,24vw,130px);font-weight:900;font-variant-numeric:tabular-nums;line-height:1.05;margin:8px 0}
+.timer.warn{color:var(--B)}.timer.ex{color:var(--gold)}
+.banner{text-align:center;font-weight:900;font-size:24px;padding:12px;border-radius:12px;background:var(--c2);margin:8px 0}
+.banner.win{background:var(--gold);color:#201700}.banner.draw{background:var(--B)}
+.tcard{background:var(--card);border-radius:16px;padding:12px;margin-bottom:12px;border-top:6px solid var(--c)}
+.tcard h3{margin:0;color:var(--c);font-size:20px}
+.cap{margin:4px 0 8px;font-weight:700}
+.pl{display:flex;flex-direction:column;gap:6px}
+.pl button{text-align:left;font:inherit;color:var(--tx);background:var(--c2);border:0;border-radius:10px;padding:10px;min-height:44px}
+.prow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #202e4d}
+.prow .nm{flex:1;display:flex;align-items:center;gap:8px;margin:0;color:var(--tx);font-size:16px}
+.chip{border:0;border-radius:20px;background:var(--c2);color:var(--mut);padding:8px 12px;font:inherit;min-height:40px;opacity:.5}
+.chip.on{opacity:1;background:#3a3010;color:var(--gold)}
+.x{background:none;border:0;color:var(--B);font-size:20px;padding:8px;min-height:40px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.chips .btn{flex:0 0 auto}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#0d1628;border-top:1px solid #22304f;padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav button{flex:1;background:none;border:0;color:var(--mut);font:inherit;font-size:12px;padding:10px 0;min-height:60px}
+nav button b{display:block;font-size:22px}nav button.on{color:var(--tx);background:var(--card)}
+.ov{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.dlg{background:var(--card);border-radius:16px;padding:18px;max-width:420px;width:100%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:#fff;color:#111;padding:10px 16px;border-radius:20px;z-index:30;font-weight:600}
+.warnb{background:#3b1217;border:1px solid var(--B);border-radius:12px;padding:10px;margin-bottom:12px;font-weight:700}
+.tl{font-size:14px;padding:4px 0;border-bottom:1px solid #202e4d;display:flex;justify-content:space-between;gap:8px}
+details summary{cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center}
+</style></head><body>
+<div id="app"></div>
+<nav id="nav"></nav>
+<script>
+const KEY='fmm_v1',REG=7*60000,SLOT=10;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const TN={A:'TEAM A',B:'TEAM B',C:'TEAM C'},EM={A:'🟦',B:'🟥',C:'🟩'},KS=['A','B','C'];
+const pad=n=>String(n).padStart(2,'0');
+const mmDown=ms=>{const s=Math.ceil(Math.max(0,ms)/1000);return pad(s/60|0)+':'+pad(s%60)};
+const mmUp=ms=>{const s=Math.floor(ms/1000);return pad(s/60|0)+':'+pad(s%60)};
+const hms=ms=>{const s=Math.floor(Math.max(0,ms)/1000);return (s/3600|0)+':'+pad((s%3600)/60|0)+':'+pad(s%60)};
+const fmtT=ms=>new Date(ms).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+const third=(x,y)=>KS.find(k=>k!==x&&k!==y);
+let ui={ro:true};
+let S=(()=>{try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}})()||{players:[],sess:null,tab:'dash'};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const upd=()=>{save();render()};
+const toast=m=>{const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200)};
+function ask(msg,o={}){return new Promise(res=>{const d=document.createElement('div');d.className='ov';
+d.innerHTML=`<div class="dlg"><p>${esc(msg)}</p>${o.input?`<input id="dlgi" value="${esc(o.val||'')}">`:''}<div class="row">${o.cancel===false?'':'<button class="btn" id="dn">Cancel</button>'}<button class="btn ${o.danger?'red':'pri'}" id="dy">${o.ok||'OK'}</button></div></div>`;
+document.body.appendChild(d);const i=d.querySelector('#dlgi');if(i){i.focus();i.select()}
+const fin=v=>{d.remove();res(v)};d.querySelector('#dy').onclick=()=>fin(o.input?i.value:true);
+const n=d.querySelector('#dn');if(n)n.onclick=()=>fin(o.input?null:false);
+if(i)i.onkeydown=e=>{if(e.key==='Enter')fin(i.value)}})}
+function uniq(name,list,self){let n=name,k=2;while(list.some(p=>p.id!==self&&p.name.toLowerCase()===n.toLowerCase()))n=name+' ('+k+++')';return n}
+function beep(){try{navigator.vibrate&&navigator.vibrate([300,100,300]);const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator();o.frequency.value=880;o.connect(c.destination);o.start();setTimeout(()=>{o.stop();c.close()},600)}catch(e){}}
+const P=id=>S.sess.roster.find(p=>p.id===id);
+const startMs=s=>new Date(s.date+'T'+s.start).getTime();
+const sizes=n=>{const b=Math.floor(n/3),e=n%3;return [b+(e>0?1:0),b+(e>1?1:0),b]};
+function sessInfo(){const s=S.sess,st=startMs(s),en=st+s.dur*60000,now=Date.now();
+if(now<st)return{l:'SESSION STARTS IN',v:hms(st-now),over:false};
+return now>=en?{l:'TURF TIME OVER',v:'0:00:00',over:true}:{l:'TIME REMAINING',v:hms(en-now),over:false}}
+const getReg=m=>m.reg+(m.t0&&m.phase==='reg'?Date.now()-m.t0:0);
+const getExt=m=>m.ext+(m.t0&&m.phase==='extra'?Date.now()-m.t0:0);
+function acc(m){if(m.t0){const d=Date.now()-m.t0;if(m.phase==='reg')m.reg+=d;else if(m.phase==='extra')m.ext+=d;m.t0=null}}
+
+/* ---------- views ---------- */
+function render(){
+$('#nav').innerHTML=[['dash','🏠','Dashboard'],['players','👥','Players'],['teams','🎲','Teams'],['hist','📊','History']].map(t=>`<button class="${S.tab===t[0]?'on':''}" data-act="tab" data-t="${t[0]}"><b>${t[1]}</b>${t[2]}</button>`).join('');
+$('#app').innerHTML={dash:vDash,players:vPlayers,teams:vTeams,hist:vHist}[S.tab]();}
+const noSess=()=>`<div class="card"><p>Create a session on the Dashboard first.</p><button class="btn pri" data-act="tab" data-t="dash">Go to Dashboard</button></div>`;
+
+function vDash(){
+const s=S.sess;
+if(!s){const d=new Date(),today=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()),h=pad((d.getHours()+1)%24)+':00';
+return `<div class="card"><h2>NEW SESSION</h2><label>Date<input type="date" id="sd" value="${today}"></label><label>Start time<input type="time" id="st" value="${h}"></label><label>Turf duration (minutes)<input type="number" id="sdur" value="120" min="20" step="10"></label><p class="mut">${S.players.length} saved players will be added to the roster (adjust in Teams). 3 teams · 7 min match · ${SLOT} min slot.</p><button class="btn pri big" data-act="newSess">Create Session</button></div>`}
+const i=sessInfo(),n=s.roster.filter(p=>p.on).length,st=startMs(s),slots=Math.floor(s.dur/SLOT),m=s.cur;
+let h='';
+if(i.over&&m)h+=`<div class="warnb">⏰ Turf time is up — finish the current match.</div>`;
+h+=`<div class="card"><div class="lab">CURRENT SESSION</div><div class="grid2"><div>📅 ${new Date(s.date+'T00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}</div><div>⏰ ${fmtT(st)}</div><div>👥 Players: ${n}</div><div>⚽ Teams: 3</div><div>🏟 Turf: ${s.dur>=60?(s.dur/60|0)+'h ':''}${s.dur%60?s.dur%60+'m':''}</div><div>≈ ${slots} matches fit</div></div><div class="lab" id="sl">${i.l}</div><div class="sr" id="sr">${i.v}</div><div class="row"><button class="btn sm" data-act="endSess">New / End Session</button></div></div>`;
+if(!s.teams)h+=`<div class="card"><p>Generate balanced teams to start.</p><button class="btn pri big" data-act="tab" data-t="teams">🎲 Go to Teams</button></div>`;
+else h+=m?vLive(m):vNext();
+const rows=[];for(let k=0;k<slots;k++){const t=st+k*SLOT*60000,r=s.hist[k];
+rows.push(`<div class="tl"><span>${fmtT(t)}–${fmtT(t+SLOT*60000)} · Match ${k+1}</span><span>${r?`✓ ${r.a[0]} ${r.sa}–${r.sb} ${r.b[0]}`:(m&&m.n===k+1?'🔴 LIVE':'')}</span></div>`)}
+h+=`<div class="card"><h2>ESTIMATED TIMELINE</h2><div class="tl"><span>${fmtT(st)} — Session start</span><span></span></div>${rows.join('')}<p class="mut">Estimate only — the live timer always takes priority.</p></div>`;
+return h}
+
+function vNext(){const s=S.sess,x=s.next;
+const sel=(id,v)=>`<select id="${id}" data-chg="nx">${KS.map(k=>`<option value="${k}" ${k===v?'selected':''}>${TN[k]}</option>`).join('')}</select>`;
+return `<div class="card"><div class="lab">NEXT MATCH #${s.hist.length+1}</div><div class="vs" style="font-size:26px"><span style="color:var(--${x.a})">${EM[x.a]} ${TN[x.a]}</span><span>vs</span><span style="color:var(--${x.b})">${EM[x.b]} ${TN[x.b]}</span></div>${s.note?`<p class="mut">${s.note}</p>`:''}<div class="row">${sel('na',x.a)}${sel('nb',x.b)}</div><button class="btn grn big" style="margin-top:10px" data-act="startM">▶ Start Next Match</button></div>`}
+
+function penUI(m,ctl){const a=m.pen.a,b=m.pen.b,ct=x=>x.filter(v=>v).length;
+const row=(k,x)=>`<div class="tl" style="font-size:18px"><span style="color:var(--${k})">${TN[k]}</span><span>${x.map(v=>v?'✅':'❌').join(' ')} <b>${ct(x)}</b></span></div>`;
+const turn=a.length<=b.length?m.a:m.b;
+return `<div class="banner">🥅 PENALTY SHOOTOUT</div>${row(m.a,a)}${row(m.b,b)}`+(ctl?`<p class="lab" style="margin-top:12px">5 KICKS EACH, THEN SUDDEN DEATH · KICKING: <span style="color:var(--${turn})">${TN[turn]}</span></p><div class="row"><button class="btn big grn" data-act="kick" data-r="1">⚽ Scored</button><button class="btn big red" data-act="kick" data-r="0">❌ Missed</button></div>`:'')}
+function vLive(m){
+const run=!!m.t0,ex=m.phase==='extra',g=m.goals,xl=ex||m.phase==='xup';
+let tm,cls='timer',lab='MATCH TIMER';
+if(xl){cls+=' ex';lab=m.xlim?'EXTRA TIME (1 MIN) — FIRST GOAL WINS':'EXTRA TIME — FIRST GOAL WINS';tm=m.xlim?mmDown(m.xlim-getExt(m)):'+'+mmUp(getExt(m))}
+else{const r=REG-getReg(m);tm=mmDown(r);if(r<=60000&&m.phase==='reg')cls+=' warn'}
+const pcount=m.pen?m.pen.a.length+m.pen.b.length:0;
+let h=`<div class="card"><div class="lab">CURRENT MATCH #${m.n} · ${lab}</div><div class="vs"><span style="color:var(--${m.a})">${EM[m.a]} ${TN[m.a]}</span><span style="color:var(--${m.b})">${TN[m.b]} ${EM[m.b]}</span></div><div class="score"><b style="color:var(--${m.a})">${m.sa}</b><span>—</span><b style="color:var(--${m.b})">${m.sb}</b></div>${m.phase==='pen'?'':`<div id="tm" class="${cls}">${tm}</div>`}`;
+if(m.phase==='timeup')h+=`<div class="banner">⏱ TIME UP</div><div class="banner draw">DRAW — START EXTRA TIME</div><button class="btn big amb" data-act="xtra" data-l="60000">▶ Extra Time — 1 min</button><div class="row"><button class="btn" data-act="xtra" data-l="0">Golden goal (no limit)</button><button class="btn" data-act="startPen">🥅 Penalties</button></div>`;
+else if(m.phase==='xup')h+=`<div class="banner">⏱ EXTRA TIME OVER</div><div class="banner draw">STILL ${m.sa}–${m.sb} — PENALTIES</div><button class="btn big amb" data-act="startPen">🥅 Start Penalty Shootout</button>`;
+else if(m.phase==='pen')h+=penUI(m,true);
+else if(m.phase==='ended'){const pc=m.pens?` (pens ${m.pen.a.filter(Boolean).length}–${m.pen.b.filter(Boolean).length})`:'';h+=`<div class="banner win">🏆 ${TN[m.winner]} WINS${m.golden?' — GOLDEN GOAL':m.pens?' — PENALTIES':''}<br><small>Score: ${m.sa}–${m.sb}${pc}</small></div>`+(m.pens?penUI(m,false):'')}
+else h+=`<div class="row"><button class="btn big ${run?'amb':'grn'}" data-act="tgl">${run?'⏸ Pause':(getReg(m)+m.ext>0?'▶ Resume':'▶ Start')}</button><button class="btn" data-act="rst">🔄 Reset</button>${ex&&!m.xlim?'<button class="btn" data-act="startPen">🥅 Penalties</button>':''}</div>`;
+if(m.phase==='reg'||ex)h+=`<div class="row"><button class="btn big" style="background:var(--${m.a})" data-act="goal" data-t="${m.a}">⚽ ${TN[m.a]} +1</button><button class="btn big" style="background:var(--${m.b})" data-act="goal" data-t="${m.b}">⚽ ${TN[m.b]} +1</button></div>`;
+const pg=m.pend&&g.find(x=>x.id===m.pend);
+if(pg){const pl=S.sess.teams[pg.team].map(P).filter(Boolean);h+=`<p class="lab" style="margin-top:12px">WHO SCORED? (optional)</p><div class="chips">${pl.map(p=>`<button class="btn sm" data-act="scorer" data-id="${p.id}">${p.s?'⭐ ':''}${esc(p.name)}</button>`).join('')}<button class="btn sm" data-act="scorer" data-id="">Skip</button></div>`}
+if(g.length)h+=`<div style="margin-top:10px">${g.map(x=>`<div class="tl"><span>⚽ Goal${x.name?' — '+esc(x.name):''}</span><span style="color:var(--${x.team})">${TN[x.team]}</span></div>`).join('')}</div>`;
+const pk=(m.phase==='pen'||m.pens);
+h+=`<div class="row"><button class="btn" data-act="undo" ${(pk?pcount:g.length)?'':'disabled'}>${pk?'↩ Undo kick':'↩ Undo goal'}</button><button class="btn" data-act="rsc" ${g.length?'':'disabled'}>Reset score</button></div><button class="btn big ${m.phase==='ended'?'grn':'red'}" style="margin-top:8px" data-act="fin">🏁 Finish Match</button>`;
+const nx=m.winner?`${TN[m.winner]} vs ${TN[third(m.a,m.b)]}`:`Winner vs ${TN[third(m.a,m.b)]}`;
+return h+`<p class="mut">Next: ${nx}</p></div>`}
+
+function vPlayers(){
+const L=S.players,ns=L.filter(p=>p.s).length;
+return `<div class="card"><h2>PLAYERS</h2><p><b>${L.length}</b> total · ⭐ ${ns} S-Rank · ${L.length-ns} regular</p><div class="row"><input id="np" placeholder="Player name" data-enter="addP" autocomplete="off"><button class="btn pri" style="flex:0 0 auto" data-act="addP">Add</button></div></div>
+<div class="card">${L.length?L.map(p=>`<div class="prow"><span class="nm">${p.s?'⭐ ':''}${esc(p.name)}</span><button class="chip ${p.s?'on':''}" data-act="togS" data-id="${p.id}">⭐ S-Rank</button><button class="btn sm" data-act="editP" data-id="${p.id}">Edit</button><button class="x" data-act="delP" data-id="${p.id}">✕</button></div>`).join(''):'<p class="mut">No players yet. Add your squad above.</p>'}</div>
+<div class="card"><button class="btn red big" data-act="clearAll">Clear All Data</button></div>`}
+
+function vTeams(){
+const s=S.sess;if(!s)return noSess();
+const R=s.roster,on=R.filter(p=>p.on),n=on.length,ns=on.filter(p=>p.s).length;
+let h=`<div class="card"><h2>SESSION ROSTER</h2><p><b>${n}</b> selected · ⭐ ${ns} S-Rank · ${n-ns} regular${n>=3?' · teams of '+sizes(n).join(' / '):' · need at least 3 players'}</p>
+<details ${ui.ro?'open':''} ontoggle="ui.ro=this.open"><summary>Edit roster (this session only)</summary>
+${R.map(p=>`<div class="prow"><label class="nm"><input type="checkbox" ${p.on?'checked':''} data-chg="rOn" data-id="${p.id}">${esc(p.name)}</label><button class="chip ${p.s?'on':''}" data-act="rS" data-id="${p.id}">⭐</button><button class="x" data-act="rDel" data-id="${p.id}">✕</button></div>`).join('')}
+<div class="row"><input id="gn" placeholder="Add guest (session only)" data-enter="addG" autocomplete="off"><button class="btn" style="flex:0 0 auto" data-act="addG">Add</button></div>
+<div class="row"><button class="btn sm" data-act="resync">↻ Pull new saved players</button></div></details>
+<div class="row" style="margin-top:12px">${s.teams?'<button class="btn pri" data-act="gen" data-m="rand">🔀 Randomize Teams</button><button class="btn pri" data-act="gen" data-m="anti">🔄 Regenerate</button>':'<button class="btn pri big" data-act="gen" data-m="anti">🎲 Generate Teams</button>'}</div></div>`;
+if(!s.teams)return h;
+const un=on.filter(p=>!KS.some(k=>s.teams[k].includes(p.id)));
+if(un.length)h+=`<div class="warnb">Unassigned: ${un.map(p=>`<div class="row" style="align-items:center"><span style="flex:2">${esc(p.name)}</span>${KS.map(k=>`<button class="btn sm" data-act="assign" data-id="${p.id}" data-t="${k}">${k}</button>`).join('')}</div>`).join('')}</div>`;
+h+=KS.map(k=>{const L=s.teams[k].map(P).filter(Boolean),c=P(s.cap[k]);
+return `<div class="tcard" style="--c:var(--${k})"><h3>${EM[k]} ${TN[k]} <small>(${L.length}${L.some(p=>p.s)?' · ⭐ '+L.filter(p=>p.s).length:''})</small></h3><div class="cap">👑 Captain: ${c?esc(c.name):'—'}</div><div class="pl">${L.map(p=>`<button data-act="cap" data-t="${k}" data-id="${p.id}">${p.s?'⭐ ':''}${esc(p.name)}${c&&c.id===p.id?' 👑':''}</button>`).join('')}</div></div>`}).join('');
+return h+`<div class="row"><button class="btn" data-act="reCap">🎲 Random captains</button></div><p class="mut">Tap a player to make them captain. Captains never change team composition.</p>`}
+
+function vHist(){
+const s=S.sess;if(!s)return noSess();
+const w={A:0,B:0,C:0};s.hist.forEach(r=>{if(r.winner)w[r.winner]++});
+return `<div class="card"><h2>MATCH HISTORY</h2><p>${KS.map(k=>`${EM[k]} ${w[k]}W`).join(' &nbsp; ')} &nbsp; · ${s.hist.length} played</p></div>`+(s.hist.length?s.hist.slice().reverse().map(r=>`<div class="card"><b>Match #${r.n}</b><div style="font-size:20px;font-weight:800;margin:4px 0"><span style="color:var(--${r.a})">${TN[r.a]}</span> ${r.sa}–${r.sb} <span style="color:var(--${r.b})">${TN[r.b]}</span></div><div>${r.winner?'🏆 Winner: '+TN[r.winner]:'Draw'}</div>${r.extra?`<div>⏱ Extra Time${r.golden?' (Golden goal)':''}</div>`:''}${r.pens?`<div>🥅 Penalties ${r.pens.a}–${r.pens.b}</div>`:''}<div class="mut">Duration ${mmUp(r.dur*1000)}</div>${r.goals.filter(x=>x.name).map(x=>`<div class="mut">⚽ ${esc(x.name)} (${TN[x.team]})</div>`).join('')}</div>`).join(''):'<div class="card mut">No matches played yet.</div>');}
+
+/* ---------- actions ---------- */
+const ACT={
+tab:d=>{S.tab=d.t;if(d.t==='teams'&&S.sess){const s=S.sess;S.players.forEach(p=>{const r=s.roster.find(x=>x.id===p.id);if(!r)s.roster.push({id:p.id,name:uniq(p.name,s.roster),s:p.s,on:true});else if(!r.so)r.s=p.s})}upd()},
+newSess:()=>{const date=$('#sd').value,start=$('#st').value,dur=Math.max(20,+$('#sdur').value||120);if(!date||!start)return toast('Pick date and time');
+S.sess={date,start,dur,roster:S.players.map(p=>({id:p.id,name:p.name,s:p.s,on:true})),teams:null,cap:{},prev:null,hist:[],cur:null,next:{a:'A',b:'B'},note:''};S.tab=S.players.length?'teams':'players';upd()},
+endSess:async()=>{const s=S.sess;if(!await ask(s.cur?'A match is in progress. End the session and discard it?':'End this session? Players are kept; teams and history are cleared.',{ok:'End session',danger:true}))return;S.sess=null;upd()},
+addP:()=>{const i=$('#np'),v=i.value.trim();if(!v)return;const n=uniq(v,S.players);if(n!==v)toast('Duplicate name — saved as '+n);const np={id:uid(),name:n,s:false};S.players.push(np);if(S.sess)S.sess.roster.push({id:np.id,name:uniq(n,S.sess.roster),s:false,on:true});upd();$('#np').focus()},
+editP:async d=>{const p=S.players.find(x=>x.id===d.id),v=await ask('Edit player name',{input:1,val:p.name,ok:'Save'});if(v&&v.trim()){p.name=uniq(v.trim(),S.players,p.id);const r=S.sess&&P(p.id);if(r)r.name=p.name;upd()}},
+delP:async d=>{const p=S.players.find(x=>x.id===d.id);if(await ask('Delete '+p.name+' from saved players?',{ok:'Delete',danger:true})){S.players=S.players.filter(x=>x.id!==d.id);upd()}},
+togS:d=>{const p=S.players.find(x=>x.id===d.id);p.s=!p.s;const r=S.sess&&P(d.id);if(r){r.s=p.s;r.so=false}upd()},
+clearAll:async()=>{if(await ask('Delete ALL players, sessions and history? This cannot be undone.',{ok:'Clear everything',danger:true})){S={players:[],sess:null,tab:'dash'};upd()}},
+rOn:(d,t)=>{const p=P(d.id);p.on=t.checked;if(!p.on)dropT(p.id);upd()},
+rS:d=>{const p=P(d.id);p.s=!p.s;p.so=true;upd()},
+rDel:d=>{const s=S.sess;dropT(d.id);s.roster=s.roster.filter(p=>p.id!==d.id);upd()},
+addG:()=>{const i=$('#gn'),v=i.value.trim();if(!v)return;const s=S.sess;s.roster.push({id:uid(),name:uniq(v,s.roster),s:false,on:true});ui.ro=true;upd();$('#gn').focus()},
+resync:()=>{const s=S.sess;let c=0;S.players.forEach(p=>{if(!s.roster.some(r=>r.id===p.id)){s.roster.push({id:p.id,name:uniq(p.name,s.roster),s:p.s,on:true});c++}});toast(c?c+' added':'Nothing new');upd()},
+assign:d=>{S.sess.teams[d.t].push(d.id);upd()},
+cap:d=>{S.sess.cap[d.t]=d.id;upd()},
+reCap:()=>{const s=S.sess;KS.forEach(k=>{const L=s.teams[k];s.cap[k]=L.length?L[Math.random()*L.length|0]:null});upd()},
+gen:async d=>{const s=S.sess,R=s.roster.filter(p=>p.on),n=R.length;
+if(n<3)return toast('Need at least 3 players');
+if(s.cur)return toast('Finish the current match first');
+const sz=sizes(n);
+if(n%3){if(!await ask(`${n} players can't split equally into 3 teams. Team sizes will be ${sz.join(' / ')} (extra spots go to random teams). Continue?`,{ok:'Generate'}))return}
+else if(s.hist.length&&!await ask('Teams will change mid-session. Match history is kept. Continue?',{ok:'Generate'}))return;
+const cap={A:0,B:0,C:0};shuf(KS).forEach((k,i)=>cap[k]=sz[i]);
+let prev=null;if(s.teams){prev={};KS.forEach(k=>s.teams[k].forEach(id=>prev[id]=k))}
+const T={A:[],B:[],C:[]};
+const isS=id=>R.find(p=>p.id===id).s;
+const place=p=>{const opts=KS.filter(k=>T[k].length<cap[k]);let best=null,bs=1e9;
+opts.forEach(k=>{const tog=prev&&d.m==='anti'&&prev[p.id]?T[k].filter(x=>prev[x]===prev[p.id]).length:0;
+const sc=(p.s?T[k].filter(isS).length*100:0)+tog*10+Math.random()*3;if(sc<bs){bs=sc;best=k}});
+T[best].push(p.id)};
+shuf(R.filter(p=>p.s)).forEach(place);shuf(R.filter(p=>!p.s)).forEach(place);
+s.prev=prev;s.teams=T;s.cap={};KS.forEach(k=>s.cap[k]=T[k][Math.random()*T[k].length|0]);upd()},
+nx:()=>{const s=S.sess;let a=$('#na').value,b=$('#nb').value;if(a===b)b=third(a,a===s.next.a?s.next.b:s.next.a);s.next={a,b};s.note='';upd()},
+startM:async()=>{const s=S.sess;if(!s.teams)return;
+if(KS.some(k=>s.next[k]===undefined&&false))return;
+if(!s.teams[s.next.a].length||!s.teams[s.next.b].length)return toast('A team has no players');
+if(sessInfo().over&&!await ask('Turf time is over. Start another match anyway?',{ok:'Start'}))return;
+s.cur={n:s.hist.length+1,a:s.next.a,b:s.next.b,sa:0,sb:0,goals:[],phase:'reg',reg:0,ext:0,t0:null,golden:false,usedExtra:false,winner:null,pend:null};upd()},
+tgl:()=>{const m=S.sess.cur;if(m.t0)acc(m);else{m.t0=Date.now();try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}}upd()},
+rst:async()=>{const m=S.sess.cur;if(!await ask('Reset the timer?',{ok:'Reset',danger:true}))return;acc(m);if(m.phase==='extra')m.ext=0;else m.reg=0;upd()},
+xtra:d=>{const m=S.sess.cur;m.phase='extra';m.usedExtra=true;m.xlim=+d.l||0;m.t0=Date.now();upd()},startPen:()=>{const m=S.sess.cur;acc(m);m.phase='pen';m.pen={a:[],b:[]};m.pens=false;upd()},kick:d=>{const m=S.sess.cur;if(m.phase!=='pen')return;const k=m.pen.a.length<=m.pen.b.length?'a':'b';m.pen[k].push(d.r==='1');const w=penCheck(m);if(w){m.phase='ended';m.winner=w;m.pens=true;m.golden=false}upd()},
+goal:d=>{const m=S.sess.cur;if(m.phase==='reg'&&!m.t0&&m.reg===0)return toast('Start the timer first');
+const g={id:uid(),team:d.t,name:null,at:Math.round((m.reg+m.ext)/1000)};m.goals.push(g);d.t===m.a?m.sa++:m.sb++;m.pend=g.id;
+if(m.phase==='extra'){acc(m);m.phase='ended';m.golden=true;m.winner=d.t}
+try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}upd()},
+scorer:d=>{const m=S.sess.cur,g=m.goals.find(x=>x.id===m.pend);if(g&&d.id){const p=P(d.id);if(p)g.name=p.name}m.pend=null;upd()},
+undo:()=>{const m=S.sess.cur;if(m.pen&&(m.phase==='pen'||m.pens)){const k=m.pen.a.length>m.pen.b.length?'a':'b';m.pen[k].pop();if(m.phase==='ended'){m.phase='pen';m.pens=false;m.winner=null}upd();return}const g=m.goals.pop();if(!g)return;g.team===m.a?m.sa--:m.sb--;m.pend=null;fixEnd(m);upd()},
+rsc:async()=>{const m=S.sess.cur;if(!await ask('Reset the score to 0–0?',{ok:'Reset',danger:true}))return;m.goals=[];m.sa=m.sb=0;m.pend=null;fixEnd(m);upd()},
+fin:async()=>{const s=S.sess,m=s.cur;if(!m)return;
+if(m.phase!=='ended'){const msg=m.sa===m.sb?`End match now as a ${m.sa}–${m.sb} draw?`:`Finish now? ${TN[m.sa>m.sb?m.a:m.b]} wins ${Math.max(m.sa,m.sb)}–${Math.min(m.sa,m.sb)}.`;if(!await ask(msg,{ok:'Finish'}))return;if(!s.cur)return}
+acc(m);const w=m.winner||(m.sa>m.sb?m.a:m.sb>m.sa?m.b:null);
+s.hist.push({n:m.n,a:m.a,b:m.b,sa:m.sa,sb:m.sb,winner:w,extra:m.usedExtra,golden:m.golden,dur:Math.round((m.reg+m.ext)/1000),pens:m.pens&&m.pen?{a:m.pen.a.filter(Boolean).length,b:m.pen.b.filter(Boolean).length}:null,goals:m.goals.map(g=>({team:g.team,name:g.name}))});
+if(w){s.next={a:w,b:third(m.a,m.b)};s.note=TN[w]+' stays on';}else{s.next={a:m.b,b:third(m.a,m.b)};s.note='Draw — the team that came in stays on';}
+s.cur=null;upd()}
+};
+function fixEnd(m){if(m.phase!=='ended')return;
+if(m.golden){m.phase='extra';m.golden=false;m.winner=null}
+else{m.winner=m.sa>m.sb?m.a:m.sb>m.sa?m.b:null;if(!m.winner)m.phase='timeup'}}
+function penCheck(m){const a=m.pen.a,b=m.pen.b,sa=a.filter(Boolean).length,sb=b.filter(Boolean).length;
+if(a.length<5||b.length<5){const ra=Math.max(0,5-a.length),rb=Math.max(0,5-b.length);if(sa>sb+rb)return m.a;if(sb>sa+ra)return m.b;return null}
+if(a.length===b.length&&sa!==sb)return sa>sb?m.a:m.b;return null}
+function dropT(id){const s=S.sess;if(!s.teams)return;KS.forEach(k=>{s.teams[k]=s.teams[k].filter(x=>x!==id);if(s.cap[k]===id)s.cap[k]=s.teams[k][0]||null})}
+
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&ACT[b.dataset.act])ACT[b.dataset.act](b.dataset,b)});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset.chg&&ACT[t.dataset.chg])ACT[t.dataset.chg](t.dataset,t)});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.enter)ACT[e.target.dataset.enter]({},e.target)});
+
+/* ---------- live ticking ---------- */
+let lastOver=null;
+function tick(){const s=S.sess;if(!s||S.tab!=='dash')return;
+const i=sessInfo(),sr=$('#sr');
+if(lastOver!==i.over){lastOver=i.over;if(sr){render();return}}
+if(sr){sr.textContent=i.v;$('#sl').textContent=i.l}
+const m=s.cur;if(!m||!m.t0)return;const el=$('#tm');
+if(m.phase==='reg'){const r=REG-getReg(m);
+if(r<=0){m.reg=REG;m.t0=null;m.golden=false;if(m.sa!==m.sb){m.phase='ended';m.winner=m.sa>m.sb?m.a:m.b}else m.phase='timeup';beep();upd();return}
+if(el){el.textContent=mmDown(r);el.classList.toggle('warn',r<=60000)}}
+else if(m.phase==='extra'){if(m.xlim&&getExt(m)>=m.xlim){m.ext=m.xlim;m.t0=null;m.phase='xup';beep();upd();return}if(el)el.textContent=m.xlim?mmDown(m.xlim-getExt(m)):'+'+mmUp(getExt(m))}}
+setInterval(tick,250);
+render();
+</script></body></html>
